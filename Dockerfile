@@ -6,7 +6,7 @@ WORKDIR /app
 RUN apk add --no-cache curl
 
 # Copy minimal files and install production deps
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 # Copy source
