@@ -13,7 +13,7 @@ const execFileAsync = promisify(execFile);
 const CUSTOM_PREFIX = process.env.CUSTOM_PREFIX || '';
 const INTERNAL_PORT = parseInt(process.env.INTERNAL_PORT || '8080', 10);
 
-// Basic timestamped logging
+// Timestamped logging
 function log(...args) {
   const ts = new Date().toISOString();
   console.log(`[${ts}]`, ...args);
@@ -29,7 +29,7 @@ function buildPrefixed(url) {
 const app = express();
 app.use(express.json());
 
-// CORS allowing any origin; expose Mcp-Session-Id header for browser clients
+// CORS: expose session header for browser-based clients
 app.use(
   cors({
     origin: '*',
@@ -43,7 +43,7 @@ app.use(
 const transports = new Map();
 
 // Helper: read session id from header or from query (?session=...)
-// This improves compatibility with clients that cannot attach custom headers.
+// Improves compatibility with clients that can’t attach custom headers.
 function getSessionId(req) {
   const h = req.headers['mcp-session-id'];
   const fromHeader = Array.isArray(h) ? h[0] : h;
@@ -71,7 +71,7 @@ function createMcpServer() {
       // Log the request info
       log(`[tool:read_web_url] request`, { originalUrl: url, prefixedUrl: prefixed });
 
-      // Use a sentinel marker so we can capture HTTP status without logging/returning the body
+      // Append HTTP status at end of stdout so we can log it without logging the body
       const STATUS_MARKER = '<<<MCP_HTTP_STATUS:';
       const STATUS_END = '>>>';
 
@@ -81,15 +81,11 @@ function createMcpServer() {
           [
             '-sL',
             '--fail',
-            // Follow redirects and fetch content
             prefixed,
-            // Append final HTTP status code to stdout after the body
             '-w',
             `\n${STATUS_MARKER}%{http_code}${STATUS_END}`
           ],
-          {
-            maxBuffer: 25 * 1024 * 1024 // 25 MiB cap
-          }
+          { maxBuffer: 25 * 1024 * 1024 }
         );
 
         // Split body and status using the marker
@@ -100,9 +96,7 @@ function createMcpServer() {
           body = stdout.slice(0, idx);
           const tail = stdout.slice(idx + STATUS_MARKER.length);
           const endIdx = tail.indexOf(STATUS_END);
-          if (endIdx !== -1) {
-            httpCode = tail.slice(0, endIdx).trim();
-          }
+          if (endIdx !== -1) httpCode = tail.slice(0, endIdx).trim();
         }
 
         // Log summary without printing the response body
@@ -114,7 +108,6 @@ function createMcpServer() {
 
         return { content: [{ type: 'text', text: body }] };
       } catch (err) {
-        // Log error details but not the response body
         const msg =
           err && typeof err === 'object' && 'stderr' in err && err.stderr
             ? String(err.stderr)
@@ -141,27 +134,32 @@ app.post('/mcp', async (req, res) => {
   const isInit = method === 'initialize';
   log(`[mcp] POST`, { method, sessionId: sessionId || null, isInit });
 
-  // Create a new session if:
-  // - The request is initialize, or
-  // - No session was provided (compat mode for clients that don't initialize explicitly)
+  // Create a new session for initialize OR when no session is provided (compat mode)
   if (!transport && (isInit || !sessionId)) {
     log(`[mcp] creating new session`);
+
+    // Pre-generate an ID so we can safely set the header immediately
+    const newSessionId = randomUUID();
+
     transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: () => randomUUID()
-      // Optionally: allowedOrigins / allowedHosts for hardened deployments
+      sessionIdGenerator: () => newSessionId
     });
 
     const server = createMcpServer();
+
     transport.onclose = () => {
       if (transport.sessionId) transports.delete(transport.sessionId);
       server.close();
-      log(`[mcp] session closed`, { sessionId: transport.sessionId || null });
+      log(`[mcp] session closed`, { sessionId: transport.sessionId || newSessionId });
     };
 
     await server.connect(transport);
-    transports.set(transport.sessionId, transport);
-    sessionId = transport.sessionId;
-    res.setHeader('Mcp-Session-Id', sessionId);
+
+    // Store and advertise the session
+    transports.set(newSessionId, transport);
+    sessionId = newSessionId;
+    if (sessionId) res.setHeader('Mcp-Session-Id', sessionId);
+
     log(`[mcp] session created`, { sessionId });
   }
 
@@ -175,7 +173,7 @@ app.post('/mcp', async (req, res) => {
   }
 
   // Always expose session ID for clients to persist it
-  res.setHeader('Mcp-Session-Id', sessionId);
+  if (sessionId) res.setHeader('Mcp-Session-Id', sessionId);
 
   // Hand off to the transport
   await transport.handleRequest(req, res, body);
@@ -208,7 +206,7 @@ app.delete('/mcp', async (req, res) => {
   res.status(204).end();
 });
 
-// Simple health endpoint
+// Health endpoint
 app.get('/', (_req, res) => {
   res.json({
     status: 'ok',
