@@ -60,7 +60,7 @@ function createMcpServer() {
     {
       title: 'Web URL Reader',
       description:
-        'Fetch an absolute HTTP/HTTPS URL using curl -sL after prepending a server-side CUSTOM_PREFIX.',
+        'Read the content from an URL. Use this for further information retrieving to understand the content of each URL.',
       inputSchema: {
         url: z.string().url().describe('Absolute URL starting with http:// or https://')
       }
