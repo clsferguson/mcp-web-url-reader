@@ -144,7 +144,7 @@ CUSTOM_PREFIX=http://monitoring-gateway/fetch
 ## Troubleshooting
 
 ### Server won't start
-- Check that port 3000 is not in use
+- Check that port 8080 is not in use
 - Verify environment variables are set correctly
 - Check Docker logs: `docker-compose logs -f`
 
