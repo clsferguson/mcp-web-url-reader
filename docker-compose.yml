@@ -1,0 +1,9 @@
+services:
+  mcp-web-url-reader:
+    image: ghcr.io/clsferguson/mcp-web-url-reader:latest
+    environment:
+      - INTERNAL_PORT=8080
+      - CUSTOM_PREFIX=https://your-proxy-host/forward
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

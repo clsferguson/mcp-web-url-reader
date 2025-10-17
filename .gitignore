@@ -1,0 +1,79 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Diagnostic reports
+report.*.json
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+coverage
+*.lcov
+.nyc_output
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Build artifacts
+dist/
+build/
+build/Release/
+
+# Caches and tooling
+.eslintcache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+.parcel-cache
+.rollup.cache
+.cache/
+
+# TypeScript (if added later)
+*.tsbuildinfo
+
+# dotenv environment files
+.env
+.env.*
+!.env.example
+
+# SSL/TLS keys (local only)
+*.pem
+*.key
+*.crt
+*.pfx
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editors/IDEs
+.vscode/
+.history
+.idea/
+
+# Package managers
+.pnp.*
+.pnpm-debug.log*
+.yarn-integrity
+
+# Docker (project-local)
+docker-compose.override.yml
+.docker/
+.dockerignore-local
+
+# Misc
+*.swp
+*.swo
